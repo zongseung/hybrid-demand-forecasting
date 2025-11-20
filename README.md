@@ -1,4 +1,4 @@
-# Open-STEF: 전력 수요 예측 시스템
+# hybrid model 기반의 전력 수요 예측 시스템
 
 <div align="center">
 
@@ -6,7 +6,6 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-red.svg)](https://pytorch.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>
 
