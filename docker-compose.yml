@@ -1,0 +1,148 @@
+services:
+  # PostgreSQL with TimescaleDB
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: demand_forecasting_db
+    environment:
+      POSTGRES_DB: demand_forecasting
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/db/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql
+      - ./src/db/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - forecasting_network
+
+  # Prefect Server
+  prefect-server:
+    image: prefecthq/prefect:3-latest
+    container_name: prefect_server
+    command: prefect server start --host 0.0.0.0
+    restart: on-failure
+    environment:
+      PREFECT_API_URL: http://localhost:4201/api
+      PREFECT_SERVER_API_HOST: 0.0.0.0
+      PREFECT_UI_API_URL: http://localhost:4201/api
+      # PostgreSQL backend configuration
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/prefect
+      PREFECT_API_DATABASE_ECHO: "false"
+      PREFECT_API_DATABASE_MIGRATE_ON_START: "true"
+    ports:
+      - "4201:4200"
+    volumes:
+      - prefect_data:/root/.prefect
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4200/api/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - forecasting_network
+
+  # Prefect Agent
+  prefect-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prefect_agent
+    command: prefect worker start --pool weekly-docker --work-queue default
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: demand_forecasting
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      MODEL_BASE_PATH: /app/models
+      PREFECT_EXPERIMENTAL_ENABLE_EVENTS_CLIENT: "false"
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./flows:/app/flows
+      - ./src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prefect-server:
+        condition: service_healthy
+    networks:
+      - forecasting_network
+
+  # FastAPI Application
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi_server
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: demand_forecasting
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      MODEL_BASE_PATH: /app/models
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./api:/app/api
+      - ./src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - forecasting_network
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_dashboard
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clock-panel
+    ports:
+      - "3300:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - postgres
+    networks:
+      - forecasting_network
+
+volumes:
+  postgres_data:
+    driver: local
+  prefect_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  forecasting_network:
+    driver: bridge
+
+
+

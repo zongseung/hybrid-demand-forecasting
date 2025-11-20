@@ -1,0 +1,100 @@
+# Prefect Deployment Configuration
+name: open-stef-hybrid-forecasting
+prefect-version: 3.5.0
+
+# Define deployments
+deployments:
+  # Daily Data Backfill (00:00 KST)
+  - name: daily-data-backfill
+    version: null
+    tags:
+      - daily
+      - data-ingestion
+      - production
+    description: |
+      Daily backfill of previous day's demand data from CSV.
+      Runs every day at 00:00 KST.
+    
+    schedule:
+      cron: "0 0 * * *"
+      timezone: "Asia/Seoul"
+    
+    entrypoint: flows/data_ingestion.py:daily_data_ingestion_flow
+    
+    work_pool:
+      name: weekly-docker
+      work_queue_name: default
+      job_variables:
+        image: "open-stef-fastapi:latest"
+        image_pull_policy: "Never"
+    
+    parameters:
+      csv_path: "/app/models/power_demand_final.csv"
+  
+  # Daily Forecast (12:10 KST)
+  - name: daily-forecast
+    version: null
+    tags:
+      - daily
+      - forecast
+      - production
+    description: |
+      Daily 24-hour forecast using 3-stage hybrid model.
+      Runs every day at 12:10 KST.
+    
+    schedule:
+      cron: "10 12 * * *"
+      timezone: "Asia/Seoul"
+    
+    entrypoint: flows/daily_forecast.py:daily_forecast_flow
+    
+    work_pool:
+      name: weekly-docker
+      work_queue_name: default
+      job_variables:
+        image: "open-stef-fastapi:latest"
+        image_pull_policy: "Never"
+    
+    parameters:
+      model_dir: "/app/models/production"
+      window_size: 168
+      horizon: 24
+  
+  # Weekly Model Retraining (Sunday 3 AM KST)
+  - name: weekly-retrain
+    version: null
+    tags:
+      - weekly
+      - retrain
+      - grid-search
+      - random-search
+      - production
+    description: |
+      Weekly retraining with Grid Search (Fourier) and Random Search (LSTM).
+      Uses 2019-2021 data (80:10:10 split).
+      Runs every Sunday at 3:00 AM KST.
+    
+    schedule:
+      cron: "0 3 * * 0"
+      timezone: "Asia/Seoul"
+    
+    entrypoint: flows/weekly_retrain_hybrid.py:weekly_retrain_flow
+    
+    work_pool:
+      name: weekly-docker
+      work_queue_name: default
+      job_variables:
+        image: "open-stef-fastapi:latest"
+        image_pull_policy: "Never"
+    
+    parameters:
+      model_dir: "/app/models/production"
+      n_lstm_iter: 50
+      lstm_epochs: 100
+      train_ratio: 0.8
+      val_ratio: 0.1
+
+# Pull configuration  
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /app

@@ -1,0 +1,48 @@
+[project]
+name = "open-stef"
+version = "0.1.0"
+description = "Demand Forecasting System with Prefect-based MLOps"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "prefect>=2.14.0",
+    "prefect-docker>=0.6.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "black>=25.9.0",
+    "flake8>=7.3.0",
+    "matplotlib>=3.10.7",
+    "numpy>=2.2.6",
+    "pandas>=2.3.3",
+    "plotly>=6.4.0",
+    "pre-commit>=4.3.0",
+    "psycopg2-binary>=2.9.11",
+    "pytest>=8.4.2",
+    "requests>=2.32.5",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.15.3",
+    "seaborn>=0.13.2",
+    "sqlalchemy>=2.0.44",
+    "statsmodels>=0.14.5",
+    "tensorflow>=2.14.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "holidays>=0.35",
+    "ipykernel>=7.1.0",
+    "workalendar>=17.0.0",
+    "tls-client>=1.0.1",
+    "browser-cookie3>=0.20.1",
+    "playwright>=1.56.0",
+    "nest-asyncio>=1.6.0",
+    "torch>=2.9.1",
+    "python-multipart>=0.0.20",
+    "mlflow>=3.6.0",
+    "influxdb-client>=1.49.0",
+    "tqdm>=4.67.1",
+]
+
+[tool.uv.workspace]
+members = [
+    "boiler",
+]

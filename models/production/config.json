@@ -1,0 +1,26 @@
+{
+  "window_size": 168,
+  "horizon": 24,
+  "train_data_length": 21043,
+  "fourier_params": {
+    "Kd": 3,
+    "Kw": 10,
+    "Ky": 2
+  },
+  "lstm_params": {
+    "weight_decay": 0.0001,
+    "use_attention": true,
+    "teacher_forcing_ratio": 0.3,
+    "scheduler": "cosine",
+    "optimizer": "adamw",
+    "num_layers": 2,
+    "learning_rate": 0.001,
+    "hidden_size": 128,
+    "grad_clip": 1.0,
+    "early_stopping_patience": 10,
+    "dropout": 0.1,
+    "bidirectional": true,
+    "batch_size": 64
+  },
+  "timestamp": "2025-11-20T17:38:49.608458"
+}
