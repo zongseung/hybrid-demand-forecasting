@@ -13,7 +13,7 @@
 
 ## 📊 개요
 
-Open-STEF는 **Trend + Fourier + LSTM** 하이브리드 모델을 사용하여 24시간 전력 수요를 예측하는 시스템입니다.
+**Trend + Fourier + LSTM** 하이브리드 모델을 사용하여 24시간 전력 수요를 예측하는 시스템입니다.
 
 ### 핵심 특징
 
@@ -172,10 +172,6 @@ forecast_df = forecaster.forecast_with_timestamps(
 
 print(forecast_df[['trend', 'seasonality', 'residual', 'forecast']])
 ```
-
-## 🤝 기여하기
-
-이슈와 Pull Request를 환영합니다!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
